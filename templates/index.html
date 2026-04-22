@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Telegram MiniWeb</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Заголовок -->
+        <div class="header">
+            <div class="header-icon">📱</div>
+            <h1>MiniWeb App</h1>
+            <p>Telegram Mini Application</p>
+        </div>
+
+        <!-- Вкладки -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="info">
+                <span class="tab-icon">ℹ️</span>
+                <span>Информация</span>
+            </button>
+            <button class="tab-btn" data-tab="files">
+                <span class="tab-icon">📥</span>
+                <span>Файлы</span>
+            </button>
+        </div>
+
+        <!-- Контент -->
+        <div class="content">
+            <!-- Вкладка Информация -->
+            <div class="tab-content active" id="info-tab">
+                <div class="card">
+                    <div class="info-loading" id="info-loading">
+                        <div class="spinner"></div>
+                        <p>Загрузка информации...</p>
+                    </div>
+                    <div id="info-content" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Вкладка Файлы -->
+            <div class="tab-content" id="files-tab">
+                <div class="files-loading" id="files-loading">
+                    <div class="spinner"></div>
+                    <p>Загрузка списка файлов...</p>
+                </div>
+                <div id="files-content" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Нижняя панель -->
+        <div class="bottom-bar">
+            <button class="action-btn" id="refreshBtn">
+                <span>🔄</span>
+                <span>Обновить</span>
+            </button>
+            <button class="action-btn" id="closeBtn">
+                <span>❌</span>
+                <span>Закрыть</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        
+        // Расширяем приложение на весь экран
+        tg.expand();
+        
+        // Показываем основную кнопку
+        tg.MainButton.setText("Обновить");
+        tg.MainButton.show();
+        
+        // Переменные
+        let currentTab = 'info';
+        
+        // Загрузка информации
+        async function loadInfo() {
+            const loadingDiv = document.getElementById('info-loading');
+            const contentDiv = document.getElementById('info-content');
+            
+            loadingDiv.style.display = 'block';
+            contentDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/info');
+                const data = await response.json();
+                
+                contentDiv.innerHTML = `
+                    <div class="info-section">
+                        <div class="info-row">
+                            <span class="info-label">📌 Название:</span>
+                            <span class="info-value">${escapeHtml(data.name)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">🔢 Версия:</span>
+                            <span class="info-value">${escapeHtml(data.version)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">📝 Описание:</span>
+                            <span class="info-value">${escapeHtml(data.description)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">📁 Файлов:</span>
+                            <span class="info-value">${data.files_available}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">📱 Платформа:</span>
+                            <span class="info-value">${escapeHtml(data.platform)}</span>
+                        </div>
+                        <div class="features-list">
+                            <h3>✨ Возможности:</h3>
+                            ${data.features.map(f => `<div class="feature-item">✓ ${escapeHtml(f)}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Ошибка:', error);
+                loadingDiv.innerHTML = '<div class="error">❌ Ошибка загрузки информации</div>';
+            }
+        }
+        
+        // Загрузка списка файлов
+        async function loadFiles() {
+            const loadingDiv = document.getElementById('files-loading');
+            const contentDiv = document.getElementById('files-content');
+            
+            loadingDiv.style.display = 'block';
+            contentDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/files');
+                const files = await response.json();
+                
+                if (files.length === 0) {
+                    contentDiv.innerHTML = '<div class="empty-state">📭 Нет доступных файлов</div>';
+                } else {
+                    contentDiv.innerHTML = `
+                        <div class="files-grid">
+                            ${files.map(file => `
+                                <div class="file-card" data-url="${escapeHtml(file.url)}" data-name="${escapeHtml(file.name)}">
+                                    <div class="file-icon">${getFileIcon(file.id)}</div>
+                                    <div class="file-details">
+                                        <h3>${escapeHtml(file.name)}</h3>
+                                        <p>${escapeHtml(file.description)}</p>
+                                        <div class="file-meta">
+                                            <span class="file-size">📏 ${escapeHtml(file.size)}</span>
+                                            <span class="file-category">📂 ${escapeHtml(file.category)}</span>
+                                        </div>
+                                    </div>
+                                    <button class="download-button" onclick="downloadFile('${file.url}', '${escapeHtml(file.name)}')">
+                                        📥 Скачать
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Ошибка:', error);
+                loadingDiv.innerHTML = '<div class="error">❌ Ошибка загрузки файлов</div>';
+            }
+        }
+        
+        // Функция скачивания файла
+        function downloadFile(url, filename) {
+            // Показываем уведомление
+            tg.showPopup({
+                title: "Скачивание",
+                message: `Файл "${filename}"开始 скачиваться`,
+                buttons: [{type: "ok"}]
+            });
+            
+            // Создаем временную ссылку для скачивания
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = '';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Альтернативный метод для некоторых браузеров
+            setTimeout(() => {
+                window.location.href = url;
+            }, 100);
+        }
+        
+        // Получение иконки файла
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'txt': '📄',
+                'pdf': '📑',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🎴',
+                'zip': '🗜️',
+                'rar': '🗜️'
+            };
+            return icons[ext] || '📎';
+        }
+        
+        // Экранирование HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Переключение вкладок
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Обновляем кнопки
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            // Обновляем контент
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            
+            // Загружаем данные если нужно
+            if (tab === 'info' && !document.getElementById('info-content').innerHTML) {
+                loadInfo();
+            } else if (tab === 'files' && !document.getElementById('files-content').innerHTML) {
+                loadFiles();
+            }
+        }
+        
+        // Обновление всех данных
+        function refreshAll() {
+            if (currentTab === 'info') {
+                loadInfo();
+            } else {
+                loadFiles();
+            }
+            
+            tg.showPopup({
+                title: "Обновление",
+                message: "Данные успешно обновлены",
+                buttons: [{type: "ok"}]
+            });
+        }
+        
+        // Закрытие приложения
+        function closeApp() {
+            tg.close();
+        }
+        
+        // Обработчики событий
+        document.addEventListener('DOMContentLoaded', () => {
+            // Настройка вкладок
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            });
+            
+            // Кнопка обновления
+            document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+            document.getElementById('closeBtn').addEventListener('click', closeApp);
+            
+            // Кнопка Telegram
+            tg.MainButton.onClick(refreshAll);
+            
+            // Загружаем начальные данные
+            loadInfo();
+            
+            // Адаптация под тему Telegram
+            if (tg.colorScheme === 'dark') {
+                document.body.classList.add('dark');
+            }
+        });
+        
+        // Обработка изменения темы
+        tg.onEvent('themeChanged', () => {
+            if (tg.colorScheme === 'dark') {
+                document.body.classList.add('dark');
+            } else {
+                document.body.classList.remove('dark');
+            }
+        });
+    </script>
+</body>
+</html>
