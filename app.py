@@ -12,10 +12,11 @@ app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 CORS(app)
 
 # Конфигурация
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ARTICLES_FILE = os.path.join(BASE_DIR, 'articles', 'articles_data.json')
-FILES_FOLDER = os.path.join(BASE_DIR, 'static', 'files')
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads', 'articles_images')
+BASE_DIR = os.getcwd()
+print(BASE_DIR)
+ARTICLES_FILE = '/articles/articles_data.json'
+FILES_FOLDER = '/static/files'
+UPLOAD_FOLDER = '/uploads/articles_images'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'zip', 'rar'}
 
 # Создаем необходимые папки
