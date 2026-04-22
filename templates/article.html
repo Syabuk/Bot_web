@@ -1,0 +1,84 @@
+{% extends "base.html" %} {% block title %}{{ article.title }} - MiniWeb Blog{%
+endblock %} {% block content %}
+<article class="article-page">
+  <div
+    class="article-hero"
+    style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ article.image }}')"
+  >
+    <div class="article-hero-content">
+      <div class="article-category-badge">{{ article.category }}</div>
+      <h1 class="article-hero-title">{{ article.title }}</h1>
+      <div class="article-hero-meta">
+        <span>✍️ {{ article.author }}</span>
+        <span>📅 {{ article.date }}</span>
+        <span>👁️ {{ article.views }} просмотров</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="article-container">
+    <div class="article-content-wrapper">
+      <div class="article-body">{{ article.content_html|safe }}</div>
+
+      {% if article.files %}
+      <div class="article-files">
+        <h3>📎 Прикрепленные файлы</h3>
+        <div class="files-list">
+          {% for filename in article.files %}
+          <div class="file-item">
+            <div class="file-icon">
+              {% if filename.endswith('.pdf') %}📑 {% elif
+              filename.endswith('.txt') %}📄 {% elif filename.endswith('.jpg')
+              or filename.endswith('.png') %}🖼️ {% elif
+              filename.endswith('.zip') or filename.endswith('.rar') %}🗜️ {%
+              else %}📎 {% endif %}
+            </div>
+            <div class="file-info">
+              <div class="file-name">{{ filename }}</div>
+              <div class="file-meta">Нажмите для скачивания</div>
+            </div>
+            <button
+              class="download-file-btn"
+              data-url="/download/{{ filename }}"
+            >
+              📥 Скачать
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="article-navigation">
+        <a href="/" class="back-to-home">← Вернуться на главную</a>
+      </div>
+    </div>
+  </div>
+</article>
+
+<script>
+  // Скачивание файлов
+  document.querySelectorAll(".download-file-btn").forEach((btn) => {
+    btn.addEventListener("click", async function () {
+      const url = this.dataset.url;
+      const fileName =
+        this.closest(".file-item").querySelector(".file-name").textContent;
+
+      // Показываем уведомление Telegram
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.showPopup({
+          title: "Скачивание",
+          message: `Файл "${fileName}"开始 скачиваться`,
+          buttons: [{ type: "ok" }],
+        });
+      }
+
+      // Скачиваем файл
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "";
+      link.click();
+    });
+  });
+</script>
+{% endblock %}

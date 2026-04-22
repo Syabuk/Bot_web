@@ -1,224 +1,327 @@
 import os
-import mimetypes
-from flask import Flask, render_template, send_file, jsonify, request, send_from_directory
-from flask_cors import CORS
 import json
+import hashlib
+from datetime import datetime
+from flask import Flask, render_template, send_file, jsonify, request, abort, send_from_directory
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
+import markdown
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 CORS(app)
 
 # Конфигурация
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'files')
+ARTICLES_FILE = os.path.join(BASE_DIR, 'articles', 'articles_data.json')
+FILES_FOLDER = os.path.join(BASE_DIR, 'static', 'files')
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads', 'articles_images')
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'zip', 'rar'}
+
+# Создаем необходимые папки
+os.makedirs(FILES_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(os.path.dirname(ARTICLES_FILE), exist_ok=True)
 
-# Настройка MIME типов для правильного скачивания на мобильных
-mimetypes.add_type('application/octet-stream', '.txt')
-mimetypes.add_type('application/pdf', '.pdf')
-mimetypes.add_type('image/jpeg', '.jpg')
-mimetypes.add_type('image/png', '.png')
-mimetypes.add_type('application/zip', '.zip')
+# Данные статей
 
-# Список файлов для скачивания (можно добавлять свои)
-AVAILABLE_FILES = {
-    'user_guide.txt': {
-        'name': '📖 Руководство пользователя',
-        'description': 'Подробная инструкция по использованию приложения',
-        'category': 'Документация'
-    },
-    'example.pdf': {
-        'name': '📄 Пример PDF файла',
-        'description': 'Демонстрационный PDF документ',
-        'category': 'Документы'
-    },
-    'info.txt': {
-        'name': 'ℹ️ Информационный файл',
-        'description': 'Основная информация о приложении',
-        'category': 'Информация'
-    }
-}
+
+def load_articles():
+    """Загрузка статей из JSON файла"""
+    if os.path.exists(ARTICLES_FILE):
+        with open(ARTICLES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return get_default_articles()
+
+
+def save_articles(articles):
+    """Сохранение статей в JSON файл"""
+    with open(ARTICLES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(articles, f, ensure_ascii=False, indent=2)
+
+
+def get_default_articles():
+    """Получение демо-статей"""
+    return [
+        {
+            'id': 1,
+            'title': 'Добро пожаловать в наш блог!',
+            'description': 'Здесь вы найдете полезные статьи и материалы',
+            'content': '''
+# Добро пожаловать!
+
+Это первая статья в нашем блоге. Здесь мы будем делиться полезной информацией и файлами.
+
+## Что вы найдете здесь?
+
+- 📝 **Интересные статьи** на различные темы
+- 📥 **Полезные файлы** для скачивания
+- 🎯 **Актуальные новости** и обновления
+- 💡 **Советы и рекомендации**
+
+## Как пользоваться сайтом?
+
+1. Читайте статьи на главной странице
+2. Скачивайте файлы из материалов
+3. Следите за обновлениями
+
+Спасибо, что вы с нами! 🚀
+            ''',
+            'image': 'https://via.placeholder.com/800x400/0088cc/ffffff?text=Welcome',
+            'date': '2024-01-15',
+            'author': 'Admin',
+            'category': 'Новости',
+            'files': ['user_guide.txt', 'info.txt'],
+            'views': 156
+        },
+        {
+            'id': 2,
+            'title': 'Как скачивать файлы в Telegram Mini App',
+            'description': 'Подробная инструкция по скачиванию файлов',
+            'content': '''
+# Инструкция по скачиванию файлов
+
+В этом руководстве мы расскажем, как правильно скачивать файлы через наше приложение.
+
+## Пошаговая инструкция
+
+### Шаг 1: Найдите нужный файл
+Все файлы находятся в разделе "Файлы" или прикреплены к статьям.
+
+### Шаг 2: Нажмите на кнопку скачивания
+Нажмите на кнопку "📥 Скачать" рядом с файлом.
+
+### Шаг 3: Подтвердите скачивание
+В браузере появится запрос на сохранение файла.
+
+### Шаг 4: Откройте файл
+Файл сохранится в папку "Загрузки" на вашем устройстве.
+
+## Поддерживаемые форматы
+
+- 📄 Текстовые файлы (.txt)
+- 📑 Документы (.pdf, .doc, .docx)
+- 🖼️ Изображения (.jpg, .png)
+- 🗜️ Архивы (.zip, .rar)
+
+## Возможные проблемы
+
+Если файл не скачивается:
+1. Проверьте подключение к интернету
+2. Обновите страницу
+3. Попробуйте другой браузер
+
+Успешного использования! 🎉
+            ''',
+            'image': 'https://via.placeholder.com/800x400/28a745/ffffff?text=Download+Guide',
+            'date': '2024-01-20',
+            'author': 'Support Team',
+            'category': 'Инструкции',
+            'files': ['guide.pdf', 'example.txt'],
+            'views': 89
+        },
+        {
+            'id': 3,
+            'title': 'Полезные советы для начинающих',
+            'description': 'Советы и рекомендации для новых пользователей',
+            'content': '''
+# Советы для начинающих
+
+Мы подготовили несколько полезных советов, которые помогут вам эффективно использовать наше приложение.
+
+## 💡 Совет 1: Используйте поиск
+
+На главной странице есть поиск по статьям - это поможет быстро найти нужную информацию.
+
+## 💡 Совет 2: Сохраняйте важные файлы
+
+Все скачанные файлы сохраняются на вашем устройстве. Рекомендуем создавать отдельную папку для них.
+
+## 💡 Совет 3: Следите за обновлениями
+
+Мы регулярно добавляем новые статьи и файлы. Подпишитесь на уведомления, чтобы ничего не пропустить.
+
+## 💡 Совет 4: Делитесь с друзьями
+
+Понравилась статья? Поделитесь ссылкой с друзьями через Telegram!
+
+## 💡 Совет 5: Оставляйте отзывы
+
+Ваше мнение важно для нас. Пишите свои предложения в поддержку.
+
+Следуйте этим советам и используйте приложение с удовольствием! 😊
+            ''',
+            'image': 'https://via.placeholder.com/800x400/ffc107/000000?text=Tips',
+            'date': '2024-01-25',
+            'author': 'Expert',
+            'category': 'Советы',
+            'files': ['tips.txt'],
+            'views': 234
+        }
+    ]
+
+# Создаем демо-файлы
+
 
 def create_demo_files():
     """Создание демонстрационных файлов"""
-    
-    # Создаем user_guide.txt
-    guide_path = os.path.join(UPLOAD_FOLDER, 'user_guide.txt')
-    if not os.path.exists(guide_path):
-        with open(guide_path, 'w', encoding='utf-8') as f:
-            f.write("""РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
-================================
 
-Добро пожаловать в Telegram MiniWeb App!
+    files_data = {
+        'user_guide.txt': 'Руководство пользователя\n\n1. Откройте приложение\n2. Выберите статью\n3. Скачайте файлы',
+        'info.txt': 'Информация о приложении\nВерсия 1.0.0\nДата создания: 2024',
+        'guide.pdf': 'PDF руководство (демо версия)\n\nПодробная инструкция будет добавлена позже',
+        'example.txt': 'Пример текстового файла\nЭто демонстрационный файл для скачивания',
+        'tips.txt': 'Полезные советы:\n- Регулярно проверяйте обновления\n- Сохраняйте важные файлы\n- Делитесь с друзьями'
+    }
 
-Основные функции:
-1. Просмотр информации о приложении
-2. Скачивание файлов различных форматов
-3. Адаптивный интерфейс для мобильных устройств
+    for filename, content in files_data.items():
+        file_path = os.path.join(FILES_FOLDER, filename)
+        if not os.path.exists(file_path):
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
 
-Как скачать файл:
-- Нажмите на кнопку "Скачать" рядом с нужным файлом
-- Файл автоматически сохранится на ваше устройство
-- Откройте файл в соответствующем приложении
 
-Поддержка: @your_support_bot
-Версия: 1.0.0
-""")
-    
-    # Создаем info.txt
-    info_path = os.path.join(UPLOAD_FOLDER, 'info.txt')
-    if not os.path.exists(info_path):
-        with open(info_path, 'w', encoding='utf-8') as f:
-            f.write("""ИНФОРМАЦИЯ О ПРИЛОЖЕНИИ
-================================
-
-Название: Telegram MiniWeb App
-Версия: 1.0.0
-Разработчик: Telegram MiniApps Team
-
-Возможности:
-✓ Просмотр информации
-✓ Скачивание файлов
-✓ Мобильная оптимизация
-✓ Поддержка темной темы
-✓ Интеграция с Telegram
-
-Технологии:
-- Python Flask
-- HTML5/CSS3
-- Telegram WebApp API
-
-Контакты для связи:
-Email: support@example.com
-Telegram: @support_bot
-""")
-    
-    # Создаем простой PDF (как текст для демо)
-    pdf_path = os.path.join(UPLOAD_FOLDER, 'example.pdf')
-    if not os.path.exists(pdf_path):
-        with open(pdf_path, 'w', encoding='utf-8') as f:
-            f.write("""ДЕМОНСТРАЦИОННЫЙ PDF ДОКУМЕНТ
-================================
-
-Это пример документа в формате PDF.
-В реальном приложении здесь может быть любой PDF файл.
-
-Содержание:
-1. Введение
-2. Основные возможности
-3. Инструкция по использованию
-4. Техническая поддержка
-
-Для создания реального PDF используйте библиотеки типа reportlab.
-""")
-
-# Создаем демо файлы при запуске
+# Инициализация данных
 create_demo_files()
+articles = load_articles()
 
-def get_file_size(filepath):
-    """Получение размера файла в человекочитаемом формате"""
-    size = os.path.getsize(filepath)
+
+@app.route('/')
+def index():
+    """Главная страница со списком статей"""
+    return render_template('index.html', articles=articles)
+
+
+@app.route('/article/<int:article_id>')
+def article(article_id):
+    """Страница статьи"""
+    article_data = next((a for a in articles if a['id'] == article_id), None)
+    if not article_data:
+        abort(404)
+
+    # Увеличиваем счетчик просмотров
+    article_data['views'] += 1
+    save_articles(articles)
+
+    # Конвертируем Markdown в HTML
+    article_data['content_html'] = markdown.markdown(article_data['content'])
+
+    return render_template('article.html', article=article_data)
+
+
+@app.route('/files')
+def files_page():
+    """Страница со всеми файлами"""
+    all_files = []
+
+    # Собираем все файлы из статей
+    for article in articles:
+        for filename in article.get('files', []):
+            file_path = os.path.join(FILES_FOLDER, filename)
+            if os.path.exists(file_path):
+                file_size = os.path.getsize(file_path)
+                all_files.append({
+                    'name': filename,
+                    'article_title': article['title'],
+                    'article_id': article['id'],
+                    'size': format_file_size(file_size),
+                    'url': f'/download/{filename}'
+                })
+
+    return render_template('files.html', files=all_files)
+
+
+@app.route('/api/articles')
+def api_articles():
+    """API для получения списка статей"""
+    return jsonify(articles)
+
+
+@app.route('/api/article/<int:article_id>')
+def api_article(article_id):
+    """API для получения конкретной статьи"""
+    article_data = next((a for a in articles if a['id'] == article_id), None)
+    if not article_data:
+        return jsonify({'error': 'Article not found'}), 404
+    return jsonify(article_data)
+
+
+@app.route('/api/files')
+def api_files():
+    """API для получения списка файлов"""
+    files_list = []
+
+    for filename in os.listdir(FILES_FOLDER):
+        file_path = os.path.join(FILES_FOLDER, filename)
+        if os.path.isfile(file_path):
+            file_size = os.path.getsize(file_path)
+            files_list.append({
+                'name': filename,
+                'size': format_file_size(file_size),
+                'url': f'/download/{filename}'
+            })
+
+    return jsonify(files_list)
+
+
+@app.route('/download/<filename>')
+def download_file(filename):
+    """Скачивание файла"""
+    file_path = os.path.join(FILES_FOLDER, filename)
+
+    if not os.path.exists(file_path):
+        abort(404)
+
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name=filename
+    )
+
+
+@app.route('/api/search')
+def search_articles():
+    """Поиск статей"""
+    query = request.args.get('q', '').lower()
+
+    if not query:
+        return jsonify(articles)
+
+    results = []
+    for article in articles:
+        if (query in article['title'].lower() or
+            query in article['description'].lower() or
+                query in article['content'].lower()):
+            results.append(article)
+
+    return jsonify(results)
+
+
+@app.route('/api/categories')
+def get_categories():
+    """Получение категорий"""
+    categories = list(set(article['category'] for article in articles))
+    return jsonify(categories)
+
+
+def format_file_size(size):
+    """Форматирование размера файла"""
     for unit in ['B', 'KB', 'MB', 'GB']:
         if size < 1024.0:
             return f"{size:.1f} {unit}"
         size /= 1024.0
     return f"{size:.1f} GB"
 
-@app.route('/')
-def index():
-    """Главная страница"""
-    return render_template('index.html')
-
-@app.route('/api/files')
-def get_files():
-    """API для получения списка файлов"""
-    files_list = []
-    
-    for file_id, file_info in AVAILABLE_FILES.items():
-        file_path = os.path.join(UPLOAD_FOLDER, file_id)
-        if os.path.exists(file_path):
-            file_size = get_file_size(file_path)
-        else:
-            file_size = "0 B"
-        
-        files_list.append({
-            'id': file_id,
-            'name': file_info['name'],
-            'description': file_info['description'],
-            'category': file_info['category'],
-            'size': file_size,
-            'url': f'/download/{file_id}'
-        })
-    
-    return jsonify(files_list)
-
-@app.route('/download/<filename>')
-def download_file(filename):
-    """Скачивание файла с правильными заголовками для мобильных"""
-    try:
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-        
-        if not os.path.exists(file_path):
-            return jsonify({'error': 'Файл не найден'}), 404
-        
-        # Определяем MIME тип
-        mime_type, _ = mimetypes.guess_type(file_path)
-        if not mime_type:
-            mime_type = 'application/octet-stream'
-        
-        # Отправляем файл с заголовками для мобильных устройств
-        response = send_file(
-            file_path,
-            as_attachment=True,
-            download_name=filename,
-            mimetype=mime_type
-        )
-        
-        # Добавляем заголовки для корректной работы на мобильных
-        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        
-        return response
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/info')
-def app_info():
-    """API с информацией о приложении"""
-    # Подсчитываем реальное количество файлов
-    files_count = len([f for f in os.listdir(UPLOAD_FOLDER) 
-                      if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))])
-    
-    return jsonify({
-        'name': 'Telegram MiniWeb App',
-        'version': '1.0.0',
-        'description': 'Мобильное приложение для Telegram с возможностью скачивания файлов',
-        'files_available': files_count,
-        'platform': 'Mobile Optimized',
-        'features': [
-            'Просмотр информации',
-            'Скачивание файлов',
-            'Адаптивный дизайн',
-            'Темная тема'
-        ]
-    })
-
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """Отдача статических файлов"""
-    return send_from_directory('static', filename)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"""
-    ═══════════════════════════════════════
-    🚀 Telegram MiniWeb App запущен!
-    📱 Оптимизировано для мобильных устройств
+    ═══════════════════════════════════════════════
+    📱 Telegram MiniWeb Blog App запущен!
+    🎨 Красивый блог со статьями и файлами
     🌐 http://localhost:{port}
-    📁 Папка с файлами: {UPLOAD_FOLDER}
-    ═══════════════════════════════════════
+    📝 Статей: {len(articles)}
+    📁 Файлов: {len(os.listdir(FILES_FOLDER))}
+    ═══════════════════════════════════════════════
     """)
     app.run(host='0.0.0.0', port=port, debug=True)

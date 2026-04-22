@@ -1,0 +1,606 @@
+/* Основные переменные */
+:root {
+  --primary-color: #0088cc;
+  --primary-dark: #006699;
+  --secondary-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --dark-color: #343a40;
+  --light-color: #f8f9fa;
+  --text-color: #333;
+  --text-light: #666;
+  --border-radius: 12px;
+  --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  background: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, var(--text-color));
+  overflow-x: hidden;
+}
+
+/* App Container */
+.app-container {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Мобильная навигация */
+.mobile-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: var(--box-shadow);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.brand-icon {
+  font-size: 24px;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+/* Сайдбар */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 280px;
+  height: 100%;
+  background: var(--tg-theme-secondary-bg-color, white);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  transition: left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.open {
+  left: 0;
+}
+
+.sidebar-header {
+  padding: 20px;
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-menu {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.sidebar-menu {
+  flex: 1;
+  list-style: none;
+  padding: 20px 0;
+}
+
+.sidebar-menu li {
+  margin: 0;
+}
+
+.menu-link {
+  display: block;
+  padding: 15px 20px;
+  color: var(--tg-theme-text-color, var(--text-color));
+  text-decoration: none;
+  transition: var(--transition);
+  font-size: 16px;
+}
+
+.menu-link:hover {
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+}
+
+.sidebar-footer {
+  padding: 20px;
+  text-align: center;
+  color: var(--tg-theme-hint-color, var(--text-light));
+  font-size: 12px;
+}
+
+/* Оверлей */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: none;
+}
+
+.overlay.active {
+  display: block;
+}
+
+/* Основной контент */
+.main-content {
+  margin-top: 70px;
+  padding: 20px;
+}
+
+/* Hero секция */
+.hero-section {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(
+    135deg,
+    var(--tg-theme-button-color, var(--primary-color)) 0%,
+    var(--primary-dark) 100%
+  );
+  border-radius: var(--border-radius);
+  color: white;
+  margin-bottom: 30px;
+}
+
+.hero-title {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+/* Поиск */
+.search-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Категории */
+.categories-section {
+  margin-bottom: 30px;
+}
+
+.categories-section h2 {
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.categories-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.category-btn {
+  padding: 8px 16px;
+  background: var(--tg-theme-secondary-bg-color, var(--light-color));
+  border: 1px solid var(--tg-theme-hint-color, #ddd);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 14px;
+}
+
+.category-btn.active,
+.category-btn:hover {
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+  border-color: var(--tg-theme-button-color, var(--primary-color));
+}
+
+/* Сетка статей */
+.articles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.article-card {
+  background: var(--tg-theme-secondary-bg-color, white);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.article-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.article-image {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.article-category {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.article-content {
+  padding: 20px;
+}
+
+.article-title {
+  font-size: 18px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.article-description {
+  color: var(--tg-theme-hint-color, var(--text-light));
+  font-size: 14px;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.article-meta {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  font-size: 12px;
+  color: var(--tg-theme-hint-color, var(--text-light));
+}
+
+.read-more-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.read-more-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* Страница статьи */
+.article-page {
+  background: var(--tg-theme-bg-color, white);
+}
+
+.article-hero {
+  height: 300px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -70px;
+}
+
+.article-hero-content {
+  text-align: center;
+  color: white;
+  padding: 20px;
+}
+
+.article-category-badge {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.article-hero-title {
+  font-size: 32px;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.article-hero-meta {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.article-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.article-body {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+
+.article-body h1 {
+  font-size: 28px;
+  margin: 30px 0 15px;
+}
+
+.article-body h2 {
+  font-size: 24px;
+  margin: 25px 0 15px;
+}
+
+.article-body h3 {
+  font-size: 20px;
+  margin: 20px 0 10px;
+}
+
+.article-body p {
+  margin-bottom: 15px;
+}
+
+.article-body ul,
+.article-body ol {
+  margin: 15px 0 15px 30px;
+}
+
+.article-body li {
+  margin-bottom: 5px;
+}
+
+/* Файлы в статье */
+.article-files {
+  background: var(--tg-theme-secondary-bg-color, var(--light-color));
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.article-files h3 {
+  margin-bottom: 15px;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: var(--tg-theme-bg-color, white);
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.file-item:hover {
+  transform: translateX(5px);
+}
+
+.file-icon {
+  font-size: 32px;
+}
+
+.file-info {
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.file-meta {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color, var(--text-light));
+}
+
+.download-file-btn {
+  padding: 8px 16px;
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.download-file-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* Страница файлов */
+.files-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.files-search {
+  margin-bottom: 30px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: var(--tg-theme-secondary-bg-color, white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+}
+
+.file-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.file-card-icon {
+  font-size: 48px;
+}
+
+.file-card-info {
+  flex: 1;
+}
+
+.file-card-name {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.file-card-size {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color, var(--text-light));
+  margin-bottom: 5px;
+}
+
+.file-card-source {
+  font-size: 11px;
+  color: var(--tg-theme-button-color, var(--primary-color));
+}
+
+.file-card-download {
+  padding: 8px 16px;
+  background: var(--tg-theme-button-color, var(--primary-color));
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeInUp 0.5s ease;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 24px;
+  }
+
+  .articles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .article-hero-title {
+    font-size: 24px;
+  }
+
+  .article-hero-meta {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .files-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .file-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1a1a1a;
+  }
+
+  .article-card,
+  .file-card,
+  .file-item {
+    background: #2a2a2a;
+  }
+}
+
+/* Telegram WebApp интеграция */
+.tg-button {
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+}

@@ -1,0 +1,83 @@
+{% extends "base.html" %} {% block title %}Файлы - MiniWeb Blog{% endblock %} {%
+block content %}
+<div class="files-page">
+  <div class="page-header">
+    <h1>📥 Библиотека файлов</h1>
+    <p>Все доступные для скачивания материалы</p>
+  </div>
+
+  <div class="files-search">
+    <input
+      type="text"
+      id="fileSearch"
+      placeholder="🔍 Поиск файлов..."
+      class="search-input"
+    />
+  </div>
+
+  <div class="files-grid" id="filesGrid">
+    {% for file in files %}
+    <div class="file-card" data-name="{{ file.name|lower }}">
+      <div class="file-card-icon">
+        {% if file.name.endswith('.pdf') %}📑 {% elif file.name.endswith('.txt')
+        %}📄 {% elif file.name.endswith('.jpg') or file.name.endswith('.png')
+        %}🖼️ {% elif file.name.endswith('.zip') or file.name.endswith('.rar')
+        %}🗜️ {% else %}📎 {% endif %}
+      </div>
+      <div class="file-card-info">
+        <h3 class="file-card-name">{{ file.name }}</h3>
+        <p class="file-card-size">Размер: {{ file.size }}</p>
+        <p class="file-card-source">Из статьи: "{{ file.article_title }}"</p>
+      </div>
+      <button
+        class="file-card-download"
+        data-url="{{ file.url }}"
+        data-name="{{ file.name }}"
+      >
+        Скачать 📥
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  // Поиск файлов
+  const fileSearch = document.getElementById("fileSearch");
+  const fileCards = document.querySelectorAll(".file-card");
+
+  fileSearch.addEventListener("input", function () {
+    const searchTerm = this.value.toLowerCase();
+
+    fileCards.forEach((card) => {
+      const fileName = card.dataset.name;
+      if (fileName.includes(searchTerm)) {
+        card.style.display = "flex";
+      } else {
+        card.style.display = "none";
+      }
+    });
+  });
+
+  // Скачивание файлов
+  document.querySelectorAll(".file-card-download").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const url = this.dataset.url;
+      const fileName = this.dataset.name;
+
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.showPopup({
+          title: "Скачивание",
+          message: `Файл "${fileName}"开始 скачиваться`,
+          buttons: [{ type: "ok" }],
+        });
+      }
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "";
+      link.click();
+    });
+  });
+</script>
+{% endblock %}
